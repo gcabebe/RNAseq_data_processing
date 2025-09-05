@@ -1,0 +1,24 @@
+name: rnaseq_mining
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pysradb
+  - sra-tools
+  - fastqc
+  - multiqc
+  - trimmomatic
+  - star
+  - samtools
+  - subread  # provides featureCounts
+  - pandas
+  - numpy
+  - matplotlib
+  - seaborn
+  - biopython
+  - scikit-learn
+  - pip:
+      - requests-ftp
