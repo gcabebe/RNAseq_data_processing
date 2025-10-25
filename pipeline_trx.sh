@@ -26,19 +26,26 @@ gtf_ecoli_k12='/home/gcabebe/rnaseq/strain_Ecoli_K12_MG1655/ref/GTF_E_coli_str_k
 index_paerug_pao1='/home/gcabebe/rnaseq/strain_Paeruginosa_PAO1/index_STAR'
 gtf_paerug_pao1='/home/gcabebe/rnaseq/strain_Paeruginosa_PAO1/ref_genome/GTF_Paeruginosa_PAO1_107.gtf'
 
+index_pstutz=<PATH_TO_STAR_INDEX>
+gtf_pstutz=<PATH_TO_GTF>
+
 # Determine STAR index and GTF based on organism
 case "$ORGANISM_NAME" in
     "E coli K12")
         STAR_INDEX="$index_ecoli_k12"
         GTF_PATH="$gtf_ecoli_k12"
         ;;
-    "Pseudomonas putida KT2440")
+    "P putida KT2440")
         STAR_INDEX="$index_KT2440"
         GTF_PATH="$gtf_KT2440"
         ;;
-    "Pseudomonas aeruginosa PAO1")
+    "P aeruginosa PAO1")
         STAR_INDEX="$index_paerug_pao1"
         GTF_PATH="$gtf_paerug_pao1"
+        ;;
+    "P stutzeri STRAIN1")
+        STAR_INDEX="$gtf_pstutz"
+        GTF_PATH="$gtf_pstutz"
         ;;
     *)
         echo "Error: Unknown organism '$ORGANISM_NAME'"
