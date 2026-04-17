@@ -2,7 +2,7 @@
 > This repository is still under construction and is being updated week-to-week.
 
 # Summary
-This repository provides an executable script for pre-processing individual RNA-seq studies into read counts per gene tables. Codes assume the use of a high power computing (HPC) cluster and Simple Linux Utility for Resource Management (SLURM), but can be modified for running on a local computer.
+This repository provides an executable script for pre-processing individual RNA-seq studies into read counts per gene tables. Codes assume the use of a high performance computing (HPC) cluster and Simple Linux Utility for Resource Management (SLURM), but can be modified for running on a local computer.
 
 ## Example dataset
 The following RNA-seq project comes from a lab at the Technical University of Denmark. In brief, they tested the gene expression of _P. putida_ on non-trivial carbon sources (ie. citrate, ferulic acid, serine, and glucose) using transcriptomics and genome-scale modeling ([D'Arrigo et al 2019](https://doi.org/10.1111/1758-2229.12704)). Their data is publicly available and can be accessed on [NCBI](https://www.ncbi.nlm.nih.gov/Traces/study/?acc=SRP157937&o=acc_s%3Aa) and the [European Nucleotide Archive (ENA)](https://www.ebi.ac.uk/ena/browser/view/srp157937).
