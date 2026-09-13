@@ -1,5 +1,9 @@
 > [!NOTE]
-> This repository is still under construction and is being updated week-to-week.
+> This repository is still under construction and is being updated.
+>
+> The following files are either ***not used*** in the pipeline or are ***not functioning properly***:
+> - ```RawRCs_to_NormTables.py```
+> - ```gff_to_csv_AND_gene_lengths.py```
 
 # Summary
 This repository provides an executable script for pre-processing individual RNA-seq studies into read counts per gene tables. Codes assume the use of a high power computing (HPC) cluster and Simple Linux Utility for Resource Management (SLURM), but can be modified for running on a local computer.
