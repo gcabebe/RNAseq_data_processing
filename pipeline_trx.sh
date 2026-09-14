@@ -8,9 +8,7 @@
 ########################## SETUP #########################
 ##########################################################
 
-# Before running, may need to convert sh scripts to Unix with one of the following:
-	# [On CLI] dos2unix <file_name.sh>
-	# [On Notepad++] Edit > EOL Conversion > Unix (LF)
+# Before running, may need to convert sh scripts to Unix with - dos2unix <file_name.sh>
 
 # Exit script upon encountering an error
 set -e
@@ -407,72 +405,19 @@ do
 	sample_base=${base_file_name%_Aligned}
 
 	hq_bam="${base_file_name}_high_mapq_reads.bam"
-	fwd_bam="${base_file_name}_high_mapq_reads_forward.sorted.bam"
-	rev_bam="${base_file_name}_high_mapq_reads_reverse.sorted.bam"
 
-	# PE dUTP/TruSeq stranded samples get split into forward/reverse strand BAMs;
-	# SE samples (no _paired_trimm1 fastq) just get the quality-filtered BAM.
-	if [[ -f "$ROOT_PATH/$FASTQ_TRIM_DIR/${sample_base}_paired_trimm1.fastq.gz" ]]; then
+	if [[ -f "$hq_bam" ]]; then
+		echo "[Skipping] Already filtered: ${sample_base}"
+		continue
+	fi
 
-		if [[ -f "$fwd_bam" && -f "$rev_bam" ]]; then
-			echo "[Skipping] PE stranded already filtered: ${sample_base}"
-			continue
-		fi
+	echo "[Filtering Aligned Reads] Currently on ${sample_base}"
 
-		echo "[Filtering Aligned Reads - PE stranded] Currently on ${sample_base}"
-
-		tmp1="${base_file_name}_tmp1.bam"
-		tmp2="${base_file_name}_tmp2.bam"
-		tmp3="${base_file_name}_tmp3.bam"
-		tmp4="${base_file_name}_tmp4.bam"
-
-		if ! (
-			set -e
-			samtools view -h -b -q 20 "$SAMPLE" > "$hq_bam"
-
-			# Forward strand reads
-			samtools view -b -f 128 -F 16 "$hq_bam" > "$tmp1"
-			samtools view -b -f 80 "$hq_bam" > "$tmp2"
-			samtools merge -f "${base_file_name}_high_mapq_reads_forward.bam" "$tmp1" "$tmp2"
-			samtools sort -o "$fwd_bam" "${base_file_name}_high_mapq_reads_forward.bam"
-
-			# Reverse strand reads
-			samtools view -b -f 144 "$hq_bam" > "$tmp3"
-			samtools view -b -f 64 -F 16 "$hq_bam" > "$tmp4"
-			samtools merge -f "${base_file_name}_high_mapq_reads_reverse.bam" "$tmp3" "$tmp4"
-			samtools sort -o "$rev_bam" "${base_file_name}_high_mapq_reads_reverse.bam"
-		); then
-			echo "[Filtering] ERROR: PE stranded filtering failed for ${sample_base} - skipping, will retry on next run"
-			echo "$(date '+%F %T') PE_FILTER ${sample_base}" >> "$ROOT_PATH/$ALIGN_HQ_DIR/failed_filtering.log"
-			rm -f "$hq_bam" "$fwd_bam" "$rev_bam" \
-				"${base_file_name}_high_mapq_reads_forward.bam" \
-				"${base_file_name}_high_mapq_reads_reverse.bam"
-			rm -f "$tmp1" "$tmp2" "$tmp3" "$tmp4"
-			continue
-		fi
-
-		# tmp files and the unsorted merged BAMs were only intermediates for the
-		# split; hq_bam (the unstranded total) is kept for featureCounts below
-		rm -f "$tmp1" "$tmp2" "$tmp3" "$tmp4" \
-			"${base_file_name}_high_mapq_reads_forward.bam" \
-			"${base_file_name}_high_mapq_reads_reverse.bam"
-
-	else
-
-		if [[ -f "$hq_bam" ]]; then
-			echo "[Skipping] SE already filtered: ${sample_base}"
-			continue
-		fi
-
-		echo "[Filtering Aligned Reads - SE] Currently on ${sample_base}"
-
-		if ! samtools view -h -b -q 20 "$SAMPLE" > "$hq_bam"; then
-			echo "[Filtering] ERROR: SE filtering failed for ${sample_base} - skipping, will retry on next run"
-			echo "$(date '+%F %T') SE_FILTER ${sample_base}" >> "$ROOT_PATH/$ALIGN_HQ_DIR/failed_filtering.log"
-			rm -f "$hq_bam"
-			continue
-		fi
-
+	if ! samtools view -h -b -q 20 "$SAMPLE" > "$hq_bam"; then
+		echo "[Filtering] ERROR: Filtering failed for ${sample_base} - skipping, will retry on next run"
+		echo "$(date '+%F %T') FILTER ${sample_base}" >> "$ROOT_PATH/$ALIGN_HQ_DIR/failed_filtering.log"
+		rm -f "$hq_bam"
+		continue
 	fi
 done
 
@@ -489,38 +434,11 @@ cd "$COVERAGE_DIR"
 
 echo "[Bedtools Coverage] Generating coverage files..."
 
-# Stranded coverage for PE samples (forward/reverse split BAMs)
-for fwd_bam in "$ROOT_PATH/$ALIGN_HQ_DIR"/*_high_mapq_reads_forward.sorted.bam
-do
-	[[ -e "$fwd_bam" ]] || continue
-
-	base=$(basename "$fwd_bam" "_forward.sorted.bam")
-	rev_bam="$ROOT_PATH/$ALIGN_HQ_DIR/${base}_reverse.sorted.bam"
-
-	fwd_out="${base}.forward.coverage"
-	rev_out="${base}.reverse.coverage"
-
-	if [[ -f "$fwd_out" && -f "$rev_out" ]]; then
-		echo "[Skipping] Stranded coverage already exists: ${base}"
-		continue
-	fi
-
-	echo "[Bedtools Coverage] Processing ${base} (stranded)"
-	bedtools genomecov -d -ibam "$fwd_bam" > "$fwd_out"
-	bedtools genomecov -d -ibam "$rev_bam" > "$rev_out"
-done
-
-# Unstranded coverage for SE samples (PE samples already got stranded coverage above)
 for bam in "$ROOT_PATH/$ALIGN_HQ_DIR"/*_high_mapq_reads.bam
 do
 	[[ -e "$bam" ]] || continue
 
 	base=$(basename "$bam" .bam)
-
-	if [[ -f "$ROOT_PATH/$ALIGN_HQ_DIR/${base}_forward.sorted.bam" ]]; then
-		continue
-	fi
-
 	out="${base}.coverage"
 
 	if [[ -f "$out" ]]; then
@@ -528,7 +446,7 @@ do
 		continue
 	fi
 
-	echo "[Bedtools Coverage] Processing ${base} (unstranded)"
+	echo "[Bedtools Coverage] Processing ${base}"
 	bedtools genomecov -d -ibam "$bam" > "$out"
 done
 
@@ -546,11 +464,4 @@ cd $READ_COUNTS_DIR
 echo "[Readcounts table] Running featureCounts..."
 
 # bam files are of several strains but we will use only KT2440
-# Only the SE quality-filtered BAMs remain named *_high_mapq_reads.bam directly in
-# $ALIGN_HQ_DIR; PE samples were split into forward/reverse strand BAMs above, so
-# count those instead to avoid mixing totals with per-strand splits.
-featureCounts -a "$GTF_PATH" -o "./featureCounts_results_${STUDY_ID}.txt" \
-	"${ROOT_PATH}/${ALIGN_HQ_DIR}"/*_high_mapq_reads.bam \
-	"${ROOT_PATH}/${ALIGN_HQ_DIR}"/*_high_mapq_reads_forward.sorted.bam \
-	"${ROOT_PATH}/${ALIGN_HQ_DIR}"/*_high_mapq_reads_reverse.sorted.bam \
-	-t CDS
+featureCounts -a "$GTF_PATH" -o "./featureCounts_results_${STUDY_ID}.txt" "${ROOT_PATH}/${ALIGN_HQ_DIR}"/*_high_mapq_reads.bam -t CDS
